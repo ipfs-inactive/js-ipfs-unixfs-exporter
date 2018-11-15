@@ -43,17 +43,24 @@ describe('exporter subtree', () => {
         importer(ipld),
         pull.collect(cb)
       ),
-      (files, cb) => cb(null, files.pop().multihash),
-      (buf, cb) => cb(null, new CID(buf)),
-      (cid, cb) => pull(
-        exporter(`${cid.toBaseEncodedString()}/level-1/200Bytes.txt`, ipld),
-        pull.collect((err, files) => cb(err, { cid, files }))
+      (files, cb) => cb(null, [
+        files[1].multihash,
+        files[3].multihash
+      ]),
+      ([ targetFileCidBuf, containingFolderCidBuf ], cb) => cb(null, [
+        new CID(targetFileCidBuf),
+        new CID(containingFolderCidBuf)
+      ]),
+      ([ targetFileCid, containingFolderCid ], cb) => pull(
+        exporter(`${containingFolderCid.toBaseEncodedString()}/level-1/200Bytes.txt`, ipld),
+        pull.collect((err, files) => cb(err, { targetFileCid, containingFolderCid, files }))
       ),
-      ({ cid, files }, cb) => {
+      ({ targetFileCid, containingFolderCid, files }, cb) => {
         files.forEach(file => expect(file).to.have.property('hash'))
 
         expect(files.length).to.equal(1)
         expect(files[0].path).to.equal('200Bytes.txt')
+        expect(files[0].hash).to.deep.equal(targetFileCid.buffer)
         fileEql(files[0], content, cb)
       }
     ], done)

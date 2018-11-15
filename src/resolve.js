@@ -40,10 +40,23 @@ function createResolver (dag, options, depth, parent) {
 
       const cid = new CID(item.multihash)
 
-      waterfall([
-        (done) => dag.get(cid, done),
-        (node, done) => done(null, resolveItem(cid, node.value, item, options))
-      ], cb)
+      dag.get(cid, item.pathRest.join('/'), (err, result) => {
+        if (err) {
+          if (err.message.includes('path not available')) {
+            return cb()
+          }
+
+          return cb(err)
+        }
+
+        const remainder = toPathComponents(result.remainderPath)
+
+        item.name = toPathComponents(item.path).pop()
+        item.pathRest = remainder
+        item.multihash = result.cid.buffer
+
+        cb(null, resolveItem(result.cid, result.value, item, options))
+      })
     }),
     pull.flatten(),
     pull.filter(Boolean),
@@ -98,4 +111,12 @@ function typeOf (node) {
 
 function identity (o) {
   return o
+}
+
+const toPathComponents = (path = '') => {
+  // split on / unless escaped with \
+  return (path
+    .trim()
+    .match(/([^\\\][^/]|\\\/)+/g) || [])
+    .filter(Boolean)
 }

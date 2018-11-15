@@ -61,7 +61,7 @@ module.exports = (path, dag, options) => {
     pull.values([{
       multihash: cid.buffer,
       name: dPath.base,
-      path: dPath.base,
+      path: `${dPath.base}${dPath.rest.length ? `/${dPath.rest.join('/')}` : ''}`,
       pathRest: dPath.rest,
       depth: 0
     }]),

@@ -229,7 +229,7 @@ describe('exporter', () => {
     })
   })
 
-  it('small file in a directory with an escaped slash in the title', (done) => {
+  it.only('small file in a directory with an escaped slash in the title', (done) => {
     const fileName = `small-\\/file-${Math.random()}.txt`
     const filePath = `/foo/${fileName}`
 

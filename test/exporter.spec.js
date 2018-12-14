@@ -8,7 +8,6 @@ const IPLD = require('ipld')
 const inMemory = require('ipld-in-memory')
 const UnixFS = require('ipfs-unixfs')
 const pull = require('pull-stream')
-const zip = require('pull-zip')
 const CID = require('cids')
 const doUntil = require('async/doUntil')
 const waterfall = require('async/waterfall')
@@ -25,6 +24,7 @@ const {
 } = require('ipld-dag-pb')
 const isNode = require('detect-node')
 const randomBytes = require('./helpers/random-bytes')
+const multicodec = require('multicodec')
 
 const exporter = require('../src')
 const importer = require('ipfs-unixfs-importer')
@@ -51,13 +51,11 @@ describe('exporter', () => {
     DAGNode.create(file.marshal(), options.links, (err, node) => {
       expect(err).to.not.exist()
 
-      ipld.put(node, {
-        version: 0,
-        hashAlg: 'sha2-256',
-        format: 'dag-pb'
-      }, (err, cid) => {
-        cb(err, { file: file, node: node, cid: cid })
-      })
+      ipld.put(node, multicodec.DAG_PB, {
+        cidVersion: 0,
+        hashAlg: multicodec.SHA2_256
+      }).then((cid) => cb(null, { file: file, node: node, cid: cid }))
+        .catch((error) => cb(error))
     })
   }
 
@@ -182,47 +180,41 @@ describe('exporter', () => {
   })
 
   it('ensure hash inputs are sanitized', (done) => {
-    dagPut((err, result) => {
+    dagPut(async (err, result) => {
       expect(err).to.not.exist()
 
-      ipld.get(result.cid, (err, res) => {
-        expect(err).to.not.exist()
-        const unmarsh = UnixFS.unmarshal(result.node.data)
+      const node = await ipld.get(result.cid)
+      const unmarsh = UnixFS.unmarshal(node.data)
 
-        expect(unmarsh.data).to.deep.equal(result.file.data)
+      expect(unmarsh.data).to.deep.equal(result.file.data)
 
-        pull(
-          exporter(result.cid, ipld),
-          pull.collect(onFiles)
-        )
+      pull(
+        exporter(result.cid, ipld),
+        pull.collect(onFiles)
+      )
 
-        function onFiles (err, files) {
-          expect(err).to.equal(null)
-          expect(files).to.have.length(1)
-          expect(files[0]).to.have.property('cid')
-          expect(files[0]).to.have.property('path', result.cid.toBaseEncodedString())
-          fileEql(files[0], unmarsh.data, done)
-        }
-      })
+      function onFiles (err, files) {
+        expect(err).to.equal(null)
+        expect(files).to.have.length(1)
+        expect(files[0]).to.have.property('cid')
+        expect(files[0]).to.have.property('path', result.cid.toBaseEncodedString())
+        fileEql(files[0], unmarsh.data, done)
+      }
     })
   })
 
   it('exports a file with no links', (done) => {
-    dagPut((err, result) => {
+    dagPut(async (err, result) => {
       expect(err).to.not.exist()
 
+      const node = await ipld.get(result.cid)
+      const unmarsh = UnixFS.unmarshal(node.data)
+
       pull(
-        zip(
-          pull(
-            ipld.getStream(result.cid),
-            pull.map((res) => UnixFS.unmarshal(res.value.data))
-          ),
-          exporter(result.cid, ipld)
-        ),
+        exporter(result.cid, ipld),
         pull.collect((err, values) => {
           expect(err).to.not.exist()
-          const unmarsh = values[0][0]
-          const file = values[0][1]
+          const file = values[0]
 
           fileEql(file, unmarsh.data, done)
         })
@@ -292,25 +284,20 @@ describe('exporter', () => {
 
     dagPut({
       content: randomBytes(100)
-    }, (err, result) => {
+    }, async (err, result) => {
       expect(err).to.not.exist()
 
+      const node = await ipld.get(result.cid)
+      const unmarsh = UnixFS.unmarshal(node.data)
+
       pull(
-        zip(
-          pull(
-            ipld.getStream(result.cid),
-            pull.map((res) => UnixFS.unmarshal(res.value.data))
-          ),
-          exporter(result.cid, ipld, {
-            offset,
-            length
-          })
-        ),
+        exporter(result.cid, ipld, {
+          offset,
+          length
+        }),
         pull.collect((err, values) => {
           expect(err).to.not.exist()
-
-          const unmarsh = values[0][0]
-          const file = values[0][1]
+          const file = values[0]
 
           fileEql(file, unmarsh.data.slice(offset, offset + length), done)
         })
@@ -1153,13 +1140,15 @@ function createAndPersistNode (ipld, type, data, children, callback) {
       return callback(error)
     }
 
-    ipld.put(node, {
-      version: 1,
-      hashAlg: 'sha2-256',
-      format: 'dag-pb'
-    }, (error, cid) => callback(error, {
-      node,
-      cid
-    }))
+    ipld.put(node, multicodec.DAG_PB, {
+      cidVersion: 1,
+      hashAlg: multicodec.SHA2_256
+    }).then(
+      (cid) => callback(null, {
+        cid,
+        node
+      }),
+      (error) => callback(error)
+    )
   })
 }

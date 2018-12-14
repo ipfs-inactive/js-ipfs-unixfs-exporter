@@ -20,6 +20,7 @@ const {
   DAGLink,
   DAGNode
 } = require('ipld-dag-pb')
+const multicodec = require('multicodec')
 
 const SHARD_SPLIT_THRESHOLD = 10
 
@@ -96,10 +97,13 @@ describe('exporter sharded', function () {
           files[imported.path].cid = new CID(imported.multihash)
         })
 
-        ipld.get(directory, cb)
+        ipld.get(directory).then(
+          (data) => cb(null, data),
+          (error) => cb(error)
+        )
       },
-      ({ value, cid }, cb) => {
-        const dir = UnixFS.unmarshal(value.data)
+      ({ data }, cb) => {
+        const dir = UnixFS.unmarshal(data)
 
         expect(dir.type).to.equal('hamt-sharded-directory')
 
@@ -375,11 +379,13 @@ describe('exporter sharded', function () {
         ], cb)
       },
       (node, cb) => {
-        ipld.put(node, {
-          version: 0,
-          format: 'dag-pb',
-          hashAlg: 'sha2-256'
-        }, cb)
+        ipld.put(node, multicodec.DAG_PB, {
+          cidVersion: 0,
+          hashAlg: multicodec.SHA2_256
+        }).then(
+          (cid) => cb(null, cid),
+          (error) => cb(error)
+        )
       },
       (cid, cb) => {
         DAGNode.create(new UnixFS('hamt-sharded-directory').marshal(), [
@@ -387,11 +393,13 @@ describe('exporter sharded', function () {
         ], cb)
       },
       (node, cb) => {
-        ipld.put(node, {
-          version: 1,
-          format: 'dag-pb',
-          hashAlg: 'sha2-256'
-        }, cb)
+        ipld.put(node, multicodec.DAG_PB, {
+          cidVersion: 1,
+          hashAlg: multicodec.SHA_256
+        }).then(
+          (cid) => cb(null, cid),
+          (error) => cb(error)
+        )
       },
       (dir, cb) => {
         pull(

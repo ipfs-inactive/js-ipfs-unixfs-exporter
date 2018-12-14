@@ -150,23 +150,25 @@ function getChildren (dag, offset, end) {
 
     return pull(
       once(filteredLinks),
-      paramap((children, cb) => {
-        dag.getMany(children.map(child => child.link.cid), (err, results) => {
-          if (err) {
-            return cb(err)
-          }
+      paramap(async (children, cb) => {
+        const results = dag.getMany(children.map(child => child.link.cid))
+        const final = []
+        for (
+          let index = 0, result = await results.next();
+          !result.done;
+          index++, result = await results.next()
+        ) {
+          const child = children[index]
+          const node = result.value
 
-          cb(null, results.map((result, index) => {
-            const child = children[index]
-
-            return {
-              start: child.start,
-              end: child.end,
-              node: result,
-              size: child.size
-            }
-          }))
-        })
+          final.push({
+            start: child.start,
+            end: child.end,
+            node: node,
+            size: child.size
+          })
+        }
+        cb(null, final)
       }),
       flatten()
     )

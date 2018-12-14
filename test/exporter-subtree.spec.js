@@ -11,6 +11,7 @@ const pull = require('pull-stream')
 const randomBytes = require('./helpers/random-bytes')
 const waterfall = require('async/waterfall')
 const importer = require('ipfs-unixfs-importer')
+const multicodec = require('multicodec')
 
 const ONE_MEG = Math.pow(1024, 2)
 
@@ -132,7 +133,14 @@ describe('exporter subtree', () => {
       ),
       (files, cb) => cb(null, files.pop().multihash),
       (buf, cb) => cb(null, new CID(buf)),
-      (cid, cb) => ipld.put({ a: { file: cid } }, { format: 'dag-cbor' }, cb),
+      (cid, cb) => {
+        ipld.put(
+          { a: { file: cid } }, multicodec.DAG_CBOR
+        ).then(
+          (cborNodeCid) => cb(null, cborNodeCid),
+          (error) => cb(error)
+        )
+      },
       (cborNodeCid, cb) => pull(
         exporter(`${cborNodeCid.toBaseEncodedString()}/a/file/level-1/200Bytes.txt`, ipld),
         pull.collect(cb)

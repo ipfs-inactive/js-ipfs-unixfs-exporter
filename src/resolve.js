@@ -42,8 +42,11 @@ function createResolver (dag, options, depth, parent) {
       }
 
       waterfall([
-        (done) => dag.get(item.cid, done),
-        (node, done) => done(null, resolveItem(item.cid, node.value, item, options))
+        (done) => dag.get(item.cid).then(
+          (node) => done(null, node),
+          (error) => done(error)
+        ),
+        (node, done) => done(null, resolveItem(item.cid, node, item, options))
       ], cb)
     }),
     flatten(),

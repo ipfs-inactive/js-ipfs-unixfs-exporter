@@ -199,7 +199,7 @@ describe('exporter', () => {
         function onFiles (err, files) {
           expect(err).to.equal(null)
           expect(files).to.have.length(1)
-          expect(files[0]).to.have.property('hash')
+          expect(files[0]).to.have.property('cid')
           expect(files[0]).to.have.property('path', result.cid.toBaseEncodedString())
           fileEql(files[0], unmarsh.data, done)
         }
@@ -487,7 +487,7 @@ describe('exporter', () => {
         pull.collect((err, files) => cb(err, { cid, files }))
       ),
       ({ cid, files }, cb) => {
-        files.forEach(file => expect(file).to.have.property('hash'))
+        files.forEach(file => expect(file).to.have.property('cid'))
 
         expect(
           files.map((file) => file.path)
@@ -541,7 +541,7 @@ describe('exporter', () => {
         pull.collect((err, files) => cb(err, { cid, files }))
       ),
       ({ cid, files }, cb) => {
-        files.forEach(file => expect(file).to.have.property('hash'))
+        files.forEach(file => expect(file).to.have.property('cid'))
 
         expect(
           files.map((file) => file.path)

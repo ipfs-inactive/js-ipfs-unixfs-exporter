@@ -1066,6 +1066,34 @@ describe('exporter', () => {
       )
     }
   })
+
+  it('exports a raw leaf', (done) => {
+    pull(
+      pull.values([{
+        path: '200Bytes.txt',
+        content: pull.values([smallFile])
+      }]),
+      importer(ipld, {
+        rawLeaves: true
+      }),
+      pull.collect(collected)
+    )
+
+    function collected (err, files) {
+      expect(err).to.not.exist()
+      expect(files.length).to.equal(1)
+
+      pull(
+        exporter(files[0].multihash, ipld),
+        pull.collect((err, files) => {
+          expect(err).to.not.exist()
+          expect(files.length).to.equal(1)
+          expect(CID.isCID(files[0].cid)).to.be.true()
+          fileEql(files[0], smallFile, done)
+        })
+      )
+    }
+  })
 })
 
 function fileEql (actual, expected, done) {

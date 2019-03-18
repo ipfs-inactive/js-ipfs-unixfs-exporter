@@ -199,7 +199,7 @@ describe('exporter', () => {
         function onFiles (err, files) {
           expect(err).to.equal(null)
           expect(files).to.have.length(1)
-          expect(files[0]).to.have.property('hash')
+          expect(files[0]).to.have.property('cid')
           expect(files[0]).to.have.property('path', result.cid.toBaseEncodedString())
           fileEql(files[0], unmarsh.data, done)
         }
@@ -488,7 +488,7 @@ describe('exporter', () => {
         pull.collect((err, files) => cb(err, { cid, files }))
       ),
       ({ cid, files }, cb) => {
-        files.forEach(file => expect(file).to.have.property('hash'))
+        files.forEach(file => expect(file).to.have.property('cid'))
 
         expect(
           files.map((file) => file.path)
@@ -548,7 +548,7 @@ describe('exporter', () => {
         pull.collect((err, files) => cb(err, { cid, files }))
       ),
       ({ cid, files }, cb) => {
-        files.forEach(file => expect(file).to.have.property('hash'))
+        files.forEach(file => expect(file).to.have.property('cid'))
 
         expect(
           files.map((file) => file.path)
@@ -1069,6 +1069,34 @@ describe('exporter', () => {
               done()
             })
           )
+        })
+      )
+    }
+  })
+
+  it('exports a raw leaf', (done) => {
+    pull(
+      pull.values([{
+        path: '200Bytes.txt',
+        content: pull.values([smallFile])
+      }]),
+      importer(ipld, {
+        rawLeaves: true
+      }),
+      pull.collect(collected)
+    )
+
+    function collected (err, files) {
+      expect(err).to.not.exist()
+      expect(files.length).to.equal(1)
+
+      pull(
+        exporter(files[0].multihash, ipld),
+        pull.collect((err, files) => {
+          expect(err).to.not.exist()
+          expect(files.length).to.equal(1)
+          expect(CID.isCID(files[0].cid)).to.be.true()
+          fileEql(files[0], smallFile, done)
         })
       )
     }

@@ -26,12 +26,12 @@
   - [Usage](#usage)
     - [Example](#example)
       - [API](#api)
-    - [exporter(cid, ipld)](#exportercid-ipld)
+    - [`exporter(cid, ipld)`](#exportercid-ipld)
       - [UnixFS V1 entries](#unixfs-v1-entries)
       - [Raw entries](#raw-entries)
       - [CBOR entries](#cbor-entries)
-        - [`entry.content({ offset, length })`](#entrycontent-offset-length)
-    - [exporter.path(cid, ipld)](#exporterpathcid-ipld)
+      - [`entry.content({ offset, length })`](#entrycontent-offset-length)
+    - [`exporter.path(cid, ipld)`](#exporterpathcid-ipld)
   - [Contribute](#contribute)
   - [License](#license)
 
@@ -89,7 +89,7 @@ console.info(content) // 0, 1, 2, 3
 const exporter = require('ipfs-unixfs-exporter')
 ```
 
-### exporter(cid, ipld)
+### `exporter(cid, ipld)`
 
 Uses the given [js-ipld instance][] to fetch an IPFS node by it's CID.
 
@@ -164,7 +164,7 @@ Entries with a `dag-cbor` codec `CID` return JavaScript object entries:
 There is no `content` function for a `CBOR` node.
 
 
-##### `entry.content({ offset, length })`
+#### `entry.content({ offset, length })`
 
 When `entry` is a file or a `raw` node, `offset` and/or `length` arguments can be passed to `entry.content()` to return slices of data:
 
@@ -197,7 +197,7 @@ for await (const entry of dir.content({
 // `entries` contains the first 5 files/directories in the directory
 ```
 
-### exporter.path(cid, ipld)
+### `exporter.path(cid, ipld)`
 
 `exporter.path` will return an async iterator that yields entries for all segments in a path:
 

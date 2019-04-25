@@ -1,9 +1,10 @@
 'use strict'
 
+const extractDataFromBlock = require('../../../utils/extract-data-from-block')
+const toIterator = require('pull-stream-to-async-iterator')
 const traverse = require('pull-traverse')
 const UnixFS = require('ipfs-unixfs')
 const pull = require('pull-stream/pull')
-const values = require('pull-stream/sources/values')
 const error = require('pull-stream/sources/error')
 const once = require('pull-stream/sources/once')
 const empty = require('pull-stream/sources/empty')
@@ -11,77 +12,31 @@ const filter = require('pull-stream/throughs/filter')
 const flatten = require('pull-stream/throughs/flatten')
 const map = require('pull-stream/throughs/map')
 const paramap = require('pull-paramap')
-const extractDataFromBlock = require('./extract-data-from-block')
+const errCode = require('err-code')
 
-// Logic to export a single (possibly chunked) unixfs file.
-module.exports = (cid, node, name, path, pathRest, resolve, dag, parent, depth, options) => {
-  const accepts = pathRest[0]
-
-  if (accepts !== undefined && accepts !== path) {
-    return empty()
-  }
-
-  let file
-
-  try {
-    file = UnixFS.unmarshal(node.data)
-  } catch (err) {
-    return error(err)
-  }
-
-  const fileSize = file.fileSize()
-
-  let offset = options.offset
-  let length = options.length
-
-  if (offset < 0) {
-    return error(new Error('Offset must be greater than or equal to 0'))
-  }
-
-  if (offset > fileSize) {
-    return error(new Error('Offset must be less than the file size'))
-  }
-
-  if (length < 0) {
-    return error(new Error('Length must be greater than or equal to 0'))
-  }
-
-  if (length === 0) {
-    return once({
-      depth: depth,
-      content: once(Buffer.alloc(0)),
-      name: name,
-      path: path,
-      cid,
-      size: fileSize,
-      type: 'file'
-    })
+function streamBytes (ipld, node, fileSize, { offset, length }) {
+  if (offset === fileSize || length === 0) {
+    return once(Buffer.alloc(0))
   }
 
   if (!offset) {
     offset = 0
   }
 
-  if (!length || (offset + length > fileSize)) {
-    length = fileSize - offset
+  if (!length) {
+    length = fileSize
   }
 
-  const content = streamBytes(dag, node, fileSize, offset, length)
+  if (offset < 0) {
+    return error(errCode(new Error('Offset must be greater than or equal to 0'), 'EINVALIDPARAMS'))
+  }
 
-  return values([{
-    depth: depth,
-    content: content,
-    name: name,
-    path: path,
-    cid,
-    size: fileSize,
-    type: 'file'
-  }])
-}
+  if (offset > fileSize) {
+    return error(errCode(new Error('Offset must be less than the file size'), 'EINVALIDPARAMS'))
+  }
 
-function streamBytes (dag, node, fileSize, offset, length) {
-  if (offset === fileSize || length === 0) {
-    return once(Buffer.alloc(0))
+  if (length < 0) {
+    return error(errCode(new Error('Length must be greater than or equal to 0'), 'EINVALIDPARAMS'))
   }
 
   const end = offset + length
@@ -91,7 +46,7 @@ function streamBytes (dag, node, fileSize, offset, length) {
       node,
       start: 0,
       end: fileSize
-    }, getChildren(dag, offset, end)),
+    }, getChildren(ipld, offset, end)),
     map(extractData(offset, end)),
     filter(Boolean)
   )
@@ -150,23 +105,25 @@ function getChildren (dag, offset, end) {
 
     return pull(
       once(filteredLinks),
-      paramap((children, cb) => {
-        dag.getMany(children.map(child => child.link.cid), (err, results) => {
-          if (err) {
-            return cb(err)
-          }
+      paramap(async (children, cb) => {
+        try {
+          let results = []
 
-          cb(null, results.map((result, index) => {
-            const child = children[index]
+          for await (const result of await dag.getMany(children.map(child => child.link.cid))) {
+            const child = children[results.length]
 
-            return {
+            results.push({
               start: child.start,
               end: child.end,
               node: result,
               size: child.size
-            }
-          }))
-        })
+            })
+          }
+
+          cb(null, results)
+        } catch (err) {
+          cb(err)
+        }
       }),
       flatten()
     )
@@ -214,3 +171,11 @@ function extractData (requestedStart, requestedEnd) {
     return Buffer.alloc(0)
   }
 }
+
+const fileContent = (cid, node, unixfs, path, resolve, ipld) => {
+  return (options = {}) => {
+    return toIterator(streamBytes(ipld, node, unixfs.fileSize(), options))
+  }
+}
+
+module.exports = fileContent

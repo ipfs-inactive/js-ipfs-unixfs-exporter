@@ -5,7 +5,7 @@ const extractDataFromBlock = require('../utils/extract-data-from-block')
 const validateOffsetAndLength = require('../utils/validate-offset-and-length')
 
 const rawContent = (node) => {
-  return async function * (options = {}) {
+  return function * (options = {}) {
     const {
       offset,
       length

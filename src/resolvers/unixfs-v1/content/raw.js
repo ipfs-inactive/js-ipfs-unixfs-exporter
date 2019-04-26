@@ -3,8 +3,8 @@
 const extractDataFromBlock = require('../../../utils/extract-data-from-block')
 const validateOffsetAndLength = require('../../../utils/validate-offset-and-length')
 
-const rawContent = async (cid, node, unixfs, path, resolve, ipld) => {
-  return async function * (options = {}) {
+const rawContent = (cid, node, unixfs, path, resolve, ipld) => {
+  return function * (options = {}) {
     const size = node.length
 
     const {

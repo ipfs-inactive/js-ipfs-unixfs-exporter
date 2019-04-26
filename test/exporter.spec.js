@@ -91,6 +91,31 @@ describe('exporter', () => {
     expect(data).to.deep.equal(Buffer.from([1, 2, 3]))
   }
 
+  async function createAndPersistNode (ipld, type, data, children) {
+    const file = new UnixFS(type, data ? Buffer.from(data) : undefined)
+    const links = []
+
+    for (let i = 0; i < children.length; i++) {
+      const child = children[i]
+      const leaf = UnixFS.unmarshal(child.node.data)
+
+      file.addBlockSize(leaf.fileSize())
+
+      links.push(await DAGLink.create('', child.node.size, child.cid))
+    }
+
+    const node = await DAGNode.create(file.marshal(), links)
+    const cid = await ipld.put(node, mc.DAG_PB, {
+      cidVersion: 1,
+      hashAlg: mh.names['sha2-256']
+    })
+
+    return {
+      node,
+      cid
+    }
+  }
+
   before((done) => {
     inMemory(IPLD, (err, resolver) => {
       expect(err).to.not.exist()
@@ -170,17 +195,37 @@ describe('exporter', () => {
   })
 
   it('exports a small file with links', async () => {
-    const chunk = await dagPut({ content: randomBytes(100) })
-    const result = await dagPut({
-      content: Buffer.concat(await all(randomBytes(100))),
-      links: [
-        await DAGLink.create('', chunk.node.size, chunk.cid)
-      ]
+    const content = Buffer.from([0, 1, 2, 3, 4, 5, 6, 7, 8, 9])
+    const chunk1 = new UnixFS('raw', content.slice(0, 5))
+    const chunkNode1 = await DAGNode.create(chunk1.marshal())
+    const chunkCid1 = await ipld.put(chunkNode1, mc.DAG_PB, {
+      cidVersion: 0,
+      hashAlg: mh.names['sha2-256']
     })
 
-    const file = await exporter(result.cid, ipld)
-    const data = Buffer.concat(await all(file.content()))
-    expect(data).to.deep.equal(result.file.data)
+    const chunk2 = new UnixFS('raw', content.slice(5))
+    const chunkNode2 = await DAGNode.create(chunk2.marshal())
+    const chunkCid2 = await ipld.put(chunkNode2, mc.DAG_PB, {
+      cidVersion: 0,
+      hashAlg: mh.names['sha2-256']
+    })
+
+    const file = new UnixFS('file')
+    file.addBlockSize(5)
+    file.addBlockSize(5)
+
+    const fileNode = await DAGNode.create(file.marshal(), [
+      await DAGLink.create('', chunkNode1.size, chunkCid1),
+      await DAGLink.create('', chunkNode2.size, chunkCid2)
+    ])
+    const fileCid = await ipld.put(fileNode, mc.DAG_PB, {
+      cidVersion: 0,
+      hashAlg: mh.names['sha2-256']
+    })
+
+    const exported = await exporter(fileCid, ipld)
+    const data = Buffer.concat(await all(exported.content()))
+    expect(data).to.deep.equal(content)
   })
 
   it('exports a chunk of a small file with links', async () => {
@@ -518,6 +563,24 @@ describe('exporter', () => {
     expect(data).to.deep.equal(Buffer.from([0]))
   })
 
+  it('reads returns an empty buffer when offset is equal to the file size', async () => {
+    const data = await addAndReadTestFile({
+      file: Buffer.from([0, 1, 2, 3]),
+      offset: 4
+    })
+
+    expect(data).to.be.empty()
+  })
+
+  it('reads returns an empty buffer when length is zero', async () => {
+    const data = await addAndReadTestFile({
+      file: Buffer.from([0, 1, 2, 3]),
+      length: 0
+    })
+
+    expect(data).to.be.empty()
+  })
+
   it('errors when reading bytes with a negative length', async () => {
     try {
       await addAndReadTestFile({
@@ -527,6 +590,18 @@ describe('exporter', () => {
       })
     } catch (err) {
       expect(err.message).to.contain('Length must be greater than or equal to 0')
+      expect(err.code).to.equal('EINVALIDPARAMS')
+    }
+  })
+
+  it('errors when reading bytes that start after the file ends', async () => {
+    try {
+      await addAndReadTestFile({
+        file: Buffer.from([0, 1, 2, 3, 4]),
+        offset: 200
+      })
+    } catch (err) {
+      expect(err.message).to.contain('Offset must be less than the file size')
       expect(err.code).to.equal('EINVALIDPARAMS')
     }
   })
@@ -703,28 +778,3 @@ describe('exporter', () => {
     expect(data).to.deep.equal(smallFile)
   })
 })
-
-async function createAndPersistNode (ipld, type, data, children) {
-  const file = new UnixFS(type, data ? Buffer.from(data) : undefined)
-  const links = []
-
-  for (let i = 0; i < children.length; i++) {
-    const child = children[i]
-    const leaf = UnixFS.unmarshal(child.node.data)
-
-    file.addBlockSize(leaf.fileSize())
-
-    links.push(await DAGLink.create('', child.node.size, child.cid))
-  }
-
-  const node = await DAGNode.create(file.marshal(), links)
-  const cid = await ipld.put(node, mc.DAG_PB, {
-    cidVersion: 1,
-    hashAlg: mh.names['sha2-256']
-  })
-
-  return {
-    node,
-    cid
-  }
-}

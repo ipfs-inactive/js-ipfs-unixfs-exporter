@@ -777,4 +777,78 @@ describe('exporter', () => {
     const data = Buffer.concat(await all(file.content()))
     expect(data).to.deep.equal(smallFile)
   })
+
+  it('errors when exporting a non-existent key from a cbor node', async () => {
+    const cborNodeCid = await ipld.put({
+      foo: 'bar'
+    }, mc.DAG_CBOR)
+
+    try {
+      await exporter(`${cborNodeCid.toBaseEncodedString()}/baz`, ipld)
+    } catch (err) {
+      expect(err.code).to.equal('ENOPROP')
+    }
+  })
+
+  it('exports a cbor node', async () => {
+    const node = {
+      foo: 'bar'
+    }
+
+    const cborNodeCid = await ipld.put(node, mc.DAG_CBOR)
+    const exported = await exporter(`${cborNodeCid.toBaseEncodedString()}`, ipld)
+
+    expect(exported.node).to.deep.equal(node)
+  })
+
+  it('errors when exporting a node with no resolver', async () => {
+    const cid = new CID(1, 'git-raw', new CID('zdj7WkRPAX9o9nb9zPbXzwG7JEs78uyhwbUs8JSUayB98DWWY').multihash)
+
+    try {
+      await exporter(`${cid.toBaseEncodedString()}`, ipld)
+    } catch (err) {
+      expect(err.code).to.equal('ENORESOLVER')
+    }
+  })
+
+  it('errors if we try to export links from inside a raw node', async () => {
+    const cid = await ipld.put(Buffer.from([0, 1, 2, 3, 4]), mc.RAW)
+
+    try {
+      await exporter(`${cid.toBaseEncodedString()}/lol`, ipld)
+    } catch (err) {
+      expect(err.code).to.equal('ENOTFOUND')
+    }
+  })
+
+  it('errors we export a non-unixfs dag-pb node', async () => {
+    const cid = await ipld.put(await DAGNode.create(Buffer.from([0, 1, 2, 3, 4])), mc.DAG_PB)
+
+    try {
+      await exporter(cid, ipld)
+    } catch (err) {
+      expect(err.code).to.equal('ENOTUNIXFS')
+    }
+  })
+
+  it('errors we export a unixfs node that has a non-unixfs/dag-pb child', async () => {
+    const cborNodeCid = await ipld.put({
+      foo: 'bar'
+    }, mc.DAG_CBOR)
+
+    const file = new UnixFS('file')
+    file.addBlockSize(100)
+
+    const cid = await ipld.put(await DAGNode.create(file.marshal(), [
+      await DAGLink.create('', 100, cborNodeCid)
+    ]), mc.DAG_PB)
+
+    const exported = await exporter(cid, ipld)
+
+    try {
+      await all(exported.content())
+    } catch (err) {
+      expect(err.code).to.equal('ENOTUNIXFS')
+    }
+  })
 })

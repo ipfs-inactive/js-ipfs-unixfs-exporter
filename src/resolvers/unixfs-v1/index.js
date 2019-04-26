@@ -32,7 +32,7 @@ const unixFsResolver = async (cid, name, path, toResolve, resolve, ipld) => {
     unixfs = UnixFS.unmarshal(node.data)
   } catch (err) {
     // non-UnixFS dag-pb node? It could happen.
-    throw err
+    throw errCode(err, 'ENOTUNIXFS')
   }
 
   if (!path) {

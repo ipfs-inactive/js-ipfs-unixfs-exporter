@@ -17,7 +17,7 @@
     "release": "aegir release",
     "release-minor": "aegir release --type minor",
     "release-major": "aegir release --type major",
-    "coverage": "aegir coverage",
+    "coverage": "nyc -s npm run test:node && nyc report --reporter=html",
     "dep-check": "aegir dep-check"
   },
   "repository": {
@@ -49,6 +49,7 @@
     "ipld-in-memory": "^2.0.0",
     "multicodec": "~0.5.1",
     "multihashes": "~0.4.14",
+    "nyc": "^14.0.0",
     "sinon": "^7.1.0"
   },
   "dependencies": {

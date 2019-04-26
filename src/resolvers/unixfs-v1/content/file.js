@@ -3,6 +3,7 @@
 const extractDataFromBlock = require('../../../utils/extract-data-from-block')
 const validateOffsetAndLength = require('../../../utils/validate-offset-and-length')
 const UnixFS = require('ipfs-unixfs')
+const errCode = require('err-code')
 
 async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   // a `raw` node
@@ -23,7 +24,7 @@ async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   try {
     file = UnixFS.unmarshal(node.data)
   } catch (err) {
-    throw err
+    throw errCode(err, 'ENOTUNIXFS')
   }
 
   // might be a unixfs `raw` node or have data on intermediate nodes

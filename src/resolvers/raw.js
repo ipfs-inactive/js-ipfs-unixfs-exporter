@@ -16,14 +16,10 @@ const rawContent = (node) => {
 }
 
 const resolve = async (cid, name, path, toResolve, resolve, ipld) => {
-  const node = await ipld.get(cid)
-
-  if (!Buffer.isBuffer(node)) {
-    throw errCode(new Error(`'${cid.codec}' node ${cid.toBaseEncodedString()} was not a buffer`), 'ENOBUF')
-  }
+  const buf = await ipld.get(cid)
 
   if (toResolve.length) {
-    throw errCode(new Error(`No link named ${path} found in raw node ${cid.toBaseEncodedString()}`), 'ENOLINK')
+    throw errCode(new Error(`No link named ${path} found in raw node ${cid.toBaseEncodedString()}`), 'ENOTFOUND')
   }
 
   return {
@@ -31,8 +27,8 @@ const resolve = async (cid, name, path, toResolve, resolve, ipld) => {
       name,
       path,
       cid,
-      node,
-      content: rawContent(node)
+      node: buf,
+      content: rawContent(buf)
     }
   }
 }

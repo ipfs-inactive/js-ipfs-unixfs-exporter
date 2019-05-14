@@ -51,9 +51,10 @@ const walkPath = async function * (path, ipld) {
   } = cidAndRest(path)
   let name = cid.toBaseEncodedString()
   let entryPath = name
+  const startingDepth = toResolve.length
 
   while (true) {
-    const result = await resolve(cid, name, entryPath, toResolve, ipld)
+    const result = await resolve(cid, name, entryPath, toResolve, startingDepth, ipld)
 
     if (!result.entry && !result.next) {
       throw errCode(new Error(`Could not resolve ${path}`), 'ENOTFOUND')
@@ -79,5 +80,30 @@ const exporter = (path, ipld) => {
   return last(walkPath(path, ipld))
 }
 
+const recursive = async function * (path, ipld) {
+  const node = await exporter(path, ipld)
+
+  yield node
+
+  if (node.unixfs && node.unixfs.type.includes('dir')) {
+    for await (const child of recurse(node)) {
+      yield child
+    }
+  }
+
+  async function * recurse (node) {
+    for await (const file of node.content()) {
+      yield file
+
+      if (file.unixfs.type.includes('dir')) {
+        for await (const subFile of recurse(file)) {
+          yield subFile
+        }
+      }
+    }
+  }
+}
+
 module.exports = exporter
 module.exports.path = walkPath
+module.exports.recursive = recursive

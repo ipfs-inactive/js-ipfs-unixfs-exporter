@@ -15,11 +15,11 @@ const contentExporters = {
   file: require('./content/file'),
   directory: require('./content/directory'),
   'hamt-sharded-directory': require('./content/hamt-sharded-directory'),
-  metadata: (cid, node, unixfs, ipld) => {},
-  symlink: (cid, node, unixfs, ipld) => {}
+  metadata: (cid, node, unixfs, path, resolve, depth, ipld) => {},
+  symlink: (cid, node, unixfs, path, resolve, depth, ipld) => {}
 }
 
-const unixFsResolver = async (cid, name, path, toResolve, resolve, ipld) => {
+const unixFsResolver = async (cid, name, path, toResolve, resolve, depth, ipld) => {
   const node = await ipld.get(cid)
   let unixfs
   let next
@@ -50,7 +50,7 @@ const unixFsResolver = async (cid, name, path, toResolve, resolve, ipld) => {
     }
 
     if (!linkCid) {
-      throw errCode(new Error(`No link named ${toResolve} found in node ${cid.toBaseEncodedString()}`), 'ENOLINK')
+      throw errCode(new Error(`file does not exist`), 'ERR_NOT_FOUND')
     }
 
     // remove the path component we have resolved
@@ -71,8 +71,9 @@ const unixFsResolver = async (cid, name, path, toResolve, resolve, ipld) => {
       path,
       cid,
       node,
-      content: contentExporters[unixfs.type](cid, node, unixfs, path, resolve, ipld),
-      unixfs
+      content: contentExporters[unixfs.type](cid, node, unixfs, path, resolve, depth, ipld),
+      unixfs,
+      depth
     },
     next
   }

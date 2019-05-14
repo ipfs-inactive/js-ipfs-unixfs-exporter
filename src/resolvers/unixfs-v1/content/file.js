@@ -64,7 +64,7 @@ async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   }
 }
 
-const fileContent = (cid, node, unixfs, path, resolve, ipld) => {
+const fileContent = (cid, node, unixfs, path, resolve, depth, ipld) => {
   return (options = {}) => {
     const fileSize = unixfs.fileSize()
 

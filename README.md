@@ -32,6 +32,7 @@
       - [CBOR entries](#cbor-entries)
       - [`entry.content({ offset, length })`](#entrycontent-offset-length)
     - [`exporter.path(cid, ipld)`](#exporterpathcid-ipld)
+    - [`exporter.recursive(cid, ipld)`](#exporterrecursivecid-ipld)
   - [Contribute](#contribute)
   - [License](#license)
 
@@ -204,11 +205,25 @@ for await (const entry of dir.content({
 ```javascript
 const entries = []
 
-for await (const entry of exporter('Qmfoo/foo/bar/baz.txt', ipld)) {
+for await (const entry of exporter.path('Qmfoo/foo/bar/baz.txt', ipld)) {
   entries.push(entry)
 }
 
 // entries contains 4x `entry` objects
+```
+
+### `exporter.recursive(cid, ipld)`
+
+`exporter.recursive` will return an async iterator that yields all entries beneath a given CID or IPFS path, as well as the containing directory.
+
+```javascript
+const entries = []
+
+for await (const child of exporter.recursive('Qmfoo/foo/bar', ipld)) {
+  entries.push(entry)
+}
+
+// entries contains all children of the `Qmfoo/foo/bar` directory and it's children
 ```
 
 [dag API]: https://github.com/ipfs/interface-ipfs-core/blob/master/SPEC/DAG.md

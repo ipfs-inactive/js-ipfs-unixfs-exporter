@@ -8,14 +8,14 @@ const resolvers = {
   'dag-cbor': require('./dag-cbor')
 }
 
-const resolve = (cid, name, path, toResolve, ipld) => {
+const resolve = (cid, name, path, toResolve, depth, ipld) => {
   const resolver = resolvers[cid.codec]
 
   if (!resolver) {
     throw errCode(new Error(`No resolver for codec ${cid.codec}`), 'ENORESOLVER')
   }
 
-  return resolver(cid, name, path, toResolve, resolve, ipld)
+  return resolver(cid, name, path, toResolve, resolve, depth, ipld)
 }
 
 module.exports = resolve

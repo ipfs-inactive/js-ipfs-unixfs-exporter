@@ -15,7 +15,7 @@ const rawContent = (node) => {
   }
 }
 
-const resolve = async (cid, name, path, toResolve, resolve, ipld) => {
+const resolve = async (cid, name, path, toResolve, resolve, depth, ipld) => {
   const buf = await ipld.get(cid)
 
   if (toResolve.length) {
@@ -28,7 +28,8 @@ const resolve = async (cid, name, path, toResolve, resolve, ipld) => {
       path,
       cid,
       node: buf,
-      content: rawContent(buf)
+      content: rawContent(buf),
+      depth
     }
   }
 }

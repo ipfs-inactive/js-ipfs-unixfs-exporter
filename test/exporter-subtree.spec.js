@@ -85,7 +85,7 @@ describe('exporter subtree', () => {
     try {
       await exporter(`${imported.cid.toBaseEncodedString()}/doesnotexist`, ipld)
     } catch (err) {
-      expect(err.code).to.equal('ENOLINK')
+      expect(err.code).to.equal('ERR_NOT_FOUND')
     }
   })
 

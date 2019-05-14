@@ -851,4 +851,50 @@ describe('exporter', () => {
       expect(err.code).to.equal('ENOTUNIXFS')
     }
   })
+
+  it('exports a node with depth', async () => {
+    const imported = await all(importer([{
+      path: '/foo/bar/baz.txt',
+      content: Buffer.from('hello world')
+    }], ipld))
+
+    const exported = await exporter(imported[0].cid, ipld)
+
+    expect(exported.depth).to.equal(0)
+  })
+
+  it('exports a node recursively with depth', async () => {
+    const dir = await last(importer([{
+      path: '/foo/bar/baz.txt',
+      content: Buffer.from('hello world')
+    }, {
+      path: '/foo/qux.txt',
+      content: Buffer.from('hello world')
+    }, {
+      path: '/foo/bar/quux.txt',
+      content: Buffer.from('hello world')
+    }], ipld))
+
+    const exported = await all(exporter.recursive(dir.cid, ipld))
+    const dirCid = dir.cid.toBaseEncodedString()
+
+    expect(exported[0].depth).to.equal(0)
+    expect(exported[0].name).to.equal(dirCid)
+
+    expect(exported[1].depth).to.equal(1)
+    expect(exported[1].name).to.equal('bar')
+    expect(exported[1].path).to.equal(`${dirCid}/bar`)
+
+    expect(exported[2].depth).to.equal(2)
+    expect(exported[2].name).to.equal('baz.txt')
+    expect(exported[2].path).to.equal(`${dirCid}/bar/baz.txt`)
+
+    expect(exported[3].depth).to.equal(2)
+    expect(exported[3].name).to.equal('quux.txt')
+    expect(exported[3].path).to.equal(`${dirCid}/bar/quux.txt`)
+
+    expect(exported[4].depth).to.equal(1)
+    expect(exported[4].name).to.equal('qux.txt')
+    expect(exported[4].path).to.equal(`${dirCid}/qux.txt`)
+  })
 })

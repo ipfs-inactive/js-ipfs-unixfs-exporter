@@ -3,7 +3,7 @@
 const extractDataFromBlock = require('../../../utils/extract-data-from-block')
 const validateOffsetAndLength = require('../../../utils/validate-offset-and-length')
 
-const rawContent = (cid, node, unixfs, path, resolve, ipld) => {
+const rawContent = (cid, node, unixfs, path, resolve, depth, ipld) => {
   return function * (options = {}) {
     const size = node.length
 

@@ -111,19 +111,23 @@ Entries with a `dag-pb` codec `CID` return UnixFS V1 entries:
 }
 ```
 
-If the entry is a file, `entry.content()` returns an async iterator that emits buffers containing the file content:
+If the entry is a file, `entry.content()` returns an async iterator that yields one or more buffers containing the file content:
 
 ```javascript
-for await (const chunk of entry.content()) {
-  // chunk is a Buffer
+if (entry.unixfs.type === 'file') {
+  for await (const chunk of entry.content()) {
+    // chunk is a Buffer
+  }
 }
 ```
 
 If the entry is a directory or hamt shard, `entry.content()` returns further `entry` objects:
 
 ```javascript
-for await (const entry of dir.content()) {
-  console.info(entry.name)
+if (entry.unixfs.type.includes('directory')) { // can be 'directory' or 'hamt-sharded-directory'
+  for await (const entry of dir.content()) {
+    console.info(entry.name)
+  }
 }
 ```
 
@@ -141,13 +145,15 @@ Entries with a `raw` codec `CID` return raw entries:
 }
 ```
 
-`entry.content()` returns an async iterator that emits buffers containing the node content:
+`entry.content()` returns an async iterator that yields a buffer containing the node content:
 
 ```javascript
 for await (const chunk of entry.content()) {
   // chunk is a Buffer
 }
 ```
+
+Unless you an options object containing `offset` and `length` keys as an argument to `entry.content()`, `chunk` will be equal to `entry.node`.
 
 #### CBOR entries
 
@@ -183,7 +189,7 @@ for await (const chunk of entry.content({
 const data = Buffer.concat(bufs)
 ```
 
-If `entry` is a directory or hamt shard, passing `offset` and/or `length` to `entry.content()` will limit the number of files return from the directory.
+If `entry` is a directory or hamt shard, passing `offset` and/or `length` to `entry.content()` will limit the number of files returned from the directory.
 
 ```javascript
 const entries = []

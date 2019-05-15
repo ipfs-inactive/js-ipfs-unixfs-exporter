@@ -44,8 +44,8 @@
     "chai": "^4.2.0",
     "detect-node": "^2.0.4",
     "dirty-chai": "^2.0.1",
-    "ipld": "~0.22.0",
-    "ipld-dag-pb": "~0.15.2",
+    "ipld": "~0.24.0",
+    "ipld-dag-pb": "~0.17.0",
     "ipld-in-memory": "^2.0.0",
     "multicodec": "~0.5.1",
     "multihashes": "~0.4.14",
@@ -54,11 +54,11 @@
   },
   "dependencies": {
     "async-iterator-last": "0.0.2",
-    "cids": "~0.5.5",
+    "cids": "~0.7.1",
     "err-code": "^1.1.2",
     "hamt-sharding": "0.0.2",
     "ipfs-unixfs": "~0.1.16",
-    "ipfs-unixfs-importer": "ipfs/js-ipfs-unixfs-importer#async-await",
+    "ipfs-unixfs-importer": "~0.38.5",
     "promisify-es6": "^1.0.3"
   },
   "contributors": [

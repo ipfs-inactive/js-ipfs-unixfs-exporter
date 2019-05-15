@@ -1,20 +1,20 @@
 'use strict'
 
 const Bucket = require('hamt-sharding/src/bucket')
-const DirSharded = require('ipfs-unixfs-importer/src/importer/dir-sharded')
+const DirSharded = require('ipfs-unixfs-importer/src/dir-sharded')
 
 const addLinksToHamtBucket = (links, bucket, rootBucket) => {
   return Promise.all(
     links.map(link => {
-      if (link.name.length === 2) {
-        const pos = parseInt(link.name, 16)
+      if (link.Name.length === 2) {
+        const pos = parseInt(link.Name, 16)
 
         return bucket._putObjectAt(pos, new Bucket({
           hashFn: DirSharded.hashFn
         }, bucket, pos))
       }
 
-      return rootBucket.put(link.name.substring(2), true)
+      return rootBucket.put(link.Name.substring(2), true)
     })
   )
 }
@@ -54,7 +54,7 @@ const findShardCid = async (node, name, ipld, context) => {
     context.lastBucket = context.rootBucket
   }
 
-  await addLinksToHamtBucket(node.links, context.lastBucket, context.rootBucket)
+  await addLinksToHamtBucket(node.Links, context.lastBucket, context.rootBucket)
 
   const position = await context.rootBucket._findNewBucketAndPos(name)
   let prefix = toPrefix(position.pos)
@@ -66,9 +66,9 @@ const findShardCid = async (node, name, ipld, context) => {
     prefix = toPrefix(context.lastBucket._posAtParent)
   }
 
-  const link = node.links.find(link => {
-    const entryPrefix = link.name.substring(0, 2)
-    const entryName = link.name.substring(2)
+  const link = node.Links.find(link => {
+    const entryPrefix = link.Name.substring(0, 2)
+    const entryName = link.Name.substring(2)
 
     if (entryPrefix !== prefix) {
       // not the entry or subshard we're looking for
@@ -87,13 +87,13 @@ const findShardCid = async (node, name, ipld, context) => {
     return null
   }
 
-  if (link.name.substring(2) === name) {
-    return link.cid
+  if (link.Name.substring(2) === name) {
+    return link.Hash
   }
 
   context.hamtDepth++
 
-  node = await ipld.get(link.cid)
+  node = await ipld.get(link.Hash)
 
   return findShardCid(node, name, ipld, context)
 }

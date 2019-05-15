@@ -5,9 +5,9 @@ const UnixFS = require('ipfs-unixfs')
 const findShardCid = require('../../utils/find-cid-in-shard')
 
 const findLinkCid = (node, name) => {
-  const link = node.links.find(link => link.name === name)
+  const link = node.Links.find(link => link.Name === name)
 
-  return link && link.cid
+  return link && link.Hash
 }
 
 const contentExporters = {
@@ -29,7 +29,7 @@ const unixFsResolver = async (cid, name, path, toResolve, resolve, depth, ipld) 
   }
 
   try {
-    unixfs = UnixFS.unmarshal(node.data)
+    unixfs = UnixFS.unmarshal(node.Data)
   } catch (err) {
     // non-UnixFS dag-pb node? It could happen.
     throw errCode(err, 'ENOTUNIXFS')

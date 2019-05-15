@@ -17,7 +17,7 @@ const importer = require('ipfs-unixfs-importer')
 const {
   DAGLink,
   DAGNode
-} = require('./helpers/dag-pb')
+} = require('ipld-dag-pb')
 
 const SHARD_SPLIT_THRESHOLD = 10
 
@@ -42,7 +42,7 @@ describe('exporter sharded', function () {
   const createShardWithFiles = async (files) => {
     return (await last(importer(files, ipld, {
       shardSplitThreshold: SHARD_SPLIT_THRESHOLD,
-      wrap: true
+      wrapWithDirectory: true
     }))).cid
   }
 
@@ -69,7 +69,7 @@ describe('exporter sharded', function () {
       path,
       content: files[path].content
     })), ipld, {
-      wrap: true,
+      wrapWithDirectory: true,
       shardSplitThreshold: SHARD_SPLIT_THRESHOLD
     }))
 
@@ -81,7 +81,7 @@ describe('exporter sharded', function () {
     })
 
     const dir = await ipld.get(dirCid)
-    const dirMetadata = UnixFS.unmarshal(dir.data)
+    const dirMetadata = UnixFS.unmarshal(dir.Data)
 
     expect(dirMetadata.type).to.equal('hamt-sharded-directory')
 
@@ -191,7 +191,7 @@ describe('exporter sharded', function () {
     const dirCid = await createShard(15)
 
     const node = await DAGNode.create(new UnixFS('directory').marshal(), [
-      await DAGLink.create('shard', 5, dirCid)
+      new DAGLink('shard', 5, dirCid)
     ])
     const nodeCid = await ipld.put(node, mc.DAG_PB, {
       cidVersion: 0,
@@ -199,7 +199,7 @@ describe('exporter sharded', function () {
     })
 
     const shardNode = await DAGNode.create(new UnixFS('hamt-sharded-directory').marshal(), [
-      await DAGLink.create('75normal-dir', 5, nodeCid)
+      new DAGLink('75normal-dir', 5, nodeCid)
     ])
     const shardNodeCid = await ipld.put(shardNode, mc.DAG_PB, {
       cidVersion: 1,

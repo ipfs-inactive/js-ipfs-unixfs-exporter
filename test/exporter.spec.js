@@ -11,7 +11,7 @@ const CID = require('cids')
 const {
   DAGNode,
   DAGLink
-} = require('./helpers/dag-pb')
+} = require('ipld-dag-pb')
 const mh = require('multihashes')
 const mc = require('multicodec')
 const exporter = require('../src')
@@ -97,11 +97,11 @@ describe('exporter', () => {
 
     for (let i = 0; i < children.length; i++) {
       const child = children[i]
-      const leaf = UnixFS.unmarshal(child.node.data)
+      const leaf = UnixFS.unmarshal(child.node.Data)
 
       file.addBlockSize(leaf.fileSize())
 
-      links.push(await DAGLink.create('', child.node.size, child.cid))
+      links.push(new DAGLink('', child.node.size, child.cid))
     }
 
     const node = await DAGNode.create(file.marshal(), links)
@@ -129,7 +129,7 @@ describe('exporter', () => {
   it('ensure hash inputs are sanitized', async () => {
     const result = await dagPut()
     const node = await ipld.get(result.cid)
-    const unmarsh = UnixFS.unmarshal(node.data)
+    const unmarsh = UnixFS.unmarshal(node.Data)
 
     expect(unmarsh.data).to.deep.equal(result.file.data)
 
@@ -183,7 +183,7 @@ describe('exporter', () => {
     })
 
     const node = await ipld.get(result.cid)
-    const unmarsh = UnixFS.unmarshal(node.data)
+    const unmarsh = UnixFS.unmarshal(node.Data)
 
     const file = await exporter(result.cid, ipld)
     const data = Buffer.concat(await all(file.content({
@@ -215,8 +215,8 @@ describe('exporter', () => {
     file.addBlockSize(5)
 
     const fileNode = await DAGNode.create(file.marshal(), [
-      await DAGLink.create('', chunkNode1.size, chunkCid1),
-      await DAGLink.create('', chunkNode2.size, chunkCid2)
+      new DAGLink('', chunkNode1.size, chunkCid1),
+      new DAGLink('', chunkNode2.size, chunkCid2)
     ])
     const fileCid = await ipld.put(fileNode, mc.DAG_PB, {
       cidVersion: 0,
@@ -236,7 +236,7 @@ describe('exporter', () => {
     const result = await dagPut({
       content: Buffer.concat(await all(randomBytes(100))),
       links: [
-        await DAGLink.create('', chunk.node.size, chunk.cid)
+        new DAGLink('', chunk.node.size, chunk.cid)
       ]
     })
 
@@ -671,7 +671,7 @@ describe('exporter', () => {
 
   it('fails on non existent hash', async () => {
     // This hash doesn't exist in the repo
-    const hash = 'QmWChcSFMNcFkfeJtNd8Yru1rE6PhtCRfewi1tMwjkwKj3'
+    const hash = 'bafybeidu2qqwriogfndznz32swi5r4p2wruf6ztu5k7my53tsezwhncs5y'
 
     try {
       await exporter(hash, ipld)
@@ -840,7 +840,7 @@ describe('exporter', () => {
     file.addBlockSize(100)
 
     const cid = await ipld.put(await DAGNode.create(file.marshal(), [
-      await DAGLink.create('', 100, cborNodeCid)
+      new DAGLink('', 100, cborNodeCid)
     ]), mc.DAG_PB)
 
     const exported = await exporter(cid, ipld)

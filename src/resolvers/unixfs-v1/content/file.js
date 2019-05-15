@@ -22,7 +22,7 @@ async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   let file
 
   try {
-    file = UnixFS.unmarshal(node.data)
+    file = UnixFS.unmarshal(node.Data)
   } catch (err) {
     throw errCode(err, 'ENOTUNIXFS')
   }
@@ -43,14 +43,14 @@ async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   let childStart = streamPosition
 
   // work out which child nodes contain the requested data
-  for (let i = 0; i < node.links.length; i++) {
-    const childLink = node.links[i]
+  for (let i = 0; i < node.Links.length; i++) {
+    const childLink = node.Links[i]
     const childEnd = streamPosition + file.blockSizes[i]
 
     if ((start >= childStart && start < childEnd) || // child has offset byte
         (end > childStart && end <= childEnd) || // child has end byte
         (start < childStart && end > childEnd)) { // child is between offset and end bytes
-      const child = await ipld.get(childLink.cid)
+      const child = await ipld.get(childLink.Hash)
 
       for await (const buf of emitBytes(ipld, child, start, end, streamPosition)) {
         streamPosition += buf.length

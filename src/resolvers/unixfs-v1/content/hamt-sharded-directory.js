@@ -1,23 +1,27 @@
 'use strict'
 
 const hamtShardedDirectoryContent = (cid, node, unixfs, path, resolve, depth, ipld) => {
-  return async function * (options = {}) {
-    const links = node.Links
+  return (options = {}) => {
+    return listDirectory(node, path, resolve, depth, ipld, options)
+  }
+}
 
-    for (const link of links) {
-      const name = link.Name.substring(2)
+async function * listDirectory (node, path, resolve, depth, ipld, options) {
+  const links = node.Links
 
-      if (name) {
-        const result = await resolve(link.Hash, name, `${path}/${name}`, [], depth + 1, ipld)
+  for (const link of links) {
+    const name = link.Name.substring(2)
 
-        yield result.entry
-      } else {
-        // descend into subshard
-        node = await ipld.get(link.Hash)
+    if (name) {
+      const result = await resolve(link.Hash, name, `${path}/${name}`, [], depth + 1, ipld)
 
-        for await (const file of hamtShardedDirectoryContent(link.Hash, node, null, path, resolve, depth, ipld)(options)) {
-          yield file
-        }
+      yield result.entry
+    } else {
+      // descend into subshard
+      node = await ipld.get(link.Hash)
+
+      for await (const file of listDirectory(node, path, resolve, depth, ipld, options)) {
+        yield file
       }
     }
   }

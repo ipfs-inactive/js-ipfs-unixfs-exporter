@@ -466,7 +466,7 @@ describe('exporter', () => {
       throw new Error('Should not have got this far')
     } catch (err) {
       expect(err.message).to.equal('Length must be greater than or equal to 0')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -485,7 +485,7 @@ describe('exporter', () => {
       throw new Error('Should not have got this far')
     } catch (err) {
       expect(err.message).to.equal('Offset must be greater than or equal to 0')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -504,7 +504,7 @@ describe('exporter', () => {
       throw new Error('Should not have got this far')
     } catch (err) {
       expect(err.message).to.equal('Offset must be less than the file size')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -549,7 +549,7 @@ describe('exporter', () => {
       throw new Error('Should not have got this far')
     } catch (err) {
       expect(err.message).to.contain('Offset must be greater than or equal to 0')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -590,7 +590,7 @@ describe('exporter', () => {
       })
     } catch (err) {
       expect(err.message).to.contain('Length must be greater than or equal to 0')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -602,7 +602,7 @@ describe('exporter', () => {
       })
     } catch (err) {
       expect(err.message).to.contain('Offset must be less than the file size')
-      expect(err.code).to.equal('EINVALIDPARAMS')
+      expect(err.code).to.equal('ERR_INVALID_PARAMS')
     }
   })
 
@@ -786,7 +786,7 @@ describe('exporter', () => {
     try {
       await exporter(`${cborNodeCid.toBaseEncodedString()}/baz`, ipld)
     } catch (err) {
-      expect(err.code).to.equal('ENOPROP')
+      expect(err.code).to.equal('ERR_NO_PROP')
     }
   })
 
@@ -807,7 +807,7 @@ describe('exporter', () => {
     try {
       await exporter(`${cid.toBaseEncodedString()}`, ipld)
     } catch (err) {
-      expect(err.code).to.equal('ENORESOLVER')
+      expect(err.code).to.equal('ERR_NO_RESOLVER')
     }
   })
 
@@ -817,7 +817,7 @@ describe('exporter', () => {
     try {
       await exporter(`${cid.toBaseEncodedString()}/lol`, ipld)
     } catch (err) {
-      expect(err.code).to.equal('ENOTFOUND')
+      expect(err.code).to.equal('ERR_NOT_FOUND')
     }
   })
 
@@ -827,7 +827,7 @@ describe('exporter', () => {
     try {
       await exporter(cid, ipld)
     } catch (err) {
-      expect(err.code).to.equal('ENOTUNIXFS')
+      expect(err.code).to.equal('ERR_NOT_UNIXFS')
     }
   })
 
@@ -848,7 +848,7 @@ describe('exporter', () => {
     try {
       await all(exported.content())
     } catch (err) {
-      expect(err.code).to.equal('ENOTUNIXFS')
+      expect(err.code).to.equal('ERR_NOT_UNIXFS')
     }
   })
 

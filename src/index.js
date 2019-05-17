@@ -41,7 +41,7 @@ const cidAndRest = (path) => {
     }
   }
 
-  throw errCode(new Error(`Unknown path type ${path}`), 'EBADPATH')
+  throw errCode(new Error(`Unknown path type ${path}`), 'ERR_BAD_PATH')
 }
 
 const walkPath = async function * (path, ipld) {
@@ -57,7 +57,7 @@ const walkPath = async function * (path, ipld) {
     const result = await resolve(cid, name, entryPath, toResolve, startingDepth, ipld)
 
     if (!result.entry && !result.next) {
-      throw errCode(new Error(`Could not resolve ${path}`), 'ENOTFOUND')
+      throw errCode(new Error(`Could not resolve ${path}`), 'ERR_NOT_FOUND')
     }
 
     if (result.entry) {

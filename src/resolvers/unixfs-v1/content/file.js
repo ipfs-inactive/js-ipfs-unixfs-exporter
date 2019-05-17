@@ -24,7 +24,7 @@ async function * emitBytes (ipld, node, start, end, streamPosition = 0) {
   try {
     file = UnixFS.unmarshal(node.Data)
   } catch (err) {
-    throw errCode(err, 'ENOTUNIXFS')
+    throw errCode(err, 'ERR_NOT_UNIXFS')
   }
 
   // might be a unixfs `raw` node or have data on intermediate nodes

@@ -37,7 +37,7 @@ const resolve = async (cid, name, path, toResolve, resolve, depth, ipld) => {
       subObject = subObject[prop]
     } else {
       // cannot resolve further
-      throw errCode(new Error(`No property named ${prop} found in cbor node ${cid.toBaseEncodedString()}`), 'ENOPROP')
+      throw errCode(new Error(`No property named ${prop} found in cbor node ${cid.toBaseEncodedString()}`), 'ERR_NO_PROP')
     }
   }
 

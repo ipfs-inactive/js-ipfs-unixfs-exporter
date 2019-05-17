@@ -17,7 +17,7 @@ const rawContent = (node) => {
 
 const resolve = async (cid, name, path, toResolve, resolve, depth, ipld) => {
   if (toResolve.length) {
-    throw errCode(new Error(`No link named ${path} found in raw node ${cid.toBaseEncodedString()}`), 'ENOTFOUND')
+    throw errCode(new Error(`No link named ${path} found in raw node ${cid.toBaseEncodedString()}`), 'ERR_NOT_FOUND')
   }
 
   const buf = await ipld.get(cid)

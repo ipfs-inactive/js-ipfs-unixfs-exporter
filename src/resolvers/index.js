@@ -12,7 +12,7 @@ const resolve = (cid, name, path, toResolve, depth, ipld) => {
   const resolver = resolvers[cid.codec]
 
   if (!resolver) {
-    throw errCode(new Error(`No resolver for codec ${cid.codec}`), 'ENORESOLVER')
+    throw errCode(new Error(`No resolver for codec ${cid.codec}`), 'ERR_NO_RESOLVER')
   }
 
   return resolver(cid, name, path, toResolve, resolve, depth, ipld)

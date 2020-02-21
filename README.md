@@ -1,3 +1,9 @@
+# 🔒 Archived <!-- omit in toc -->
+
+The contents of this repo have been merged into [ipfs/js-ipfs-unixfs](https://github.com/ipfs/js-ipfs-unixfs/tree/master/packages/ipfs-unixfs-exporter).
+
+Please open [issues](https://github.com/ipfs/js-ipfs-unixfs/issues) or submit [PRs](https://github.com/ipfs/js-ipfs-unixfs/pulls) there.
+
 # ipfs-unixfs-exporter
 
 [![](https://img.shields.io/badge/made%20by-Protocol%20Labs-blue.svg?style=flat-square)](http://ipn.io)
@@ -30,7 +36,7 @@
       - [UnixFS V1 entries](#unixfs-v1-entries)
       - [Raw entries](#raw-entries)
       - [CBOR entries](#cbor-entries)
-      - [`entry.content({ offset, length })`](#entrycontent-offset-length)
+      - [`entry.content({ offset, length })`](#entrycontent-offset-length-)
     - [`exporter.path(cid, ipld)`](#exporterpathcid-ipld)
     - [`exporter.recursive(cid, ipld)`](#exporterrecursivecid-ipld)
   - [Contribute](#contribute)
